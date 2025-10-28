@@ -1,0 +1,43 @@
+# --- Step 1: Import necessary libraries ---
+import numpy as np
+import pandas as pd
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.model_selection import train_test_split
+
+# --- Step 2: Load the dataset and separate features from the target ---
+dataset = pd.read_csv('Social_Network_Ads.csv')
+X = dataset.iloc[:, :-1].values  # all columns except the last
+y = dataset.iloc[:, -1].values   # last column
+
+# --- Step 3: Handle missing numerical data ---
+imputer = SimpleImputer(missing_values=np.nan, strategy='mean')
+# Apply only to numeric columns (Age and Annual Income)
+imputer.fit(X[:, [2, 3]])
+X[:, [2, 3]] = imputer.transform(X[:, [2, 3]])
+
+# --- Step 4: Encode categorical features ---
+ct = ColumnTransformer(transformers=[('encoder', OneHotEncoder(), [1])], remainder='passthrough')
+X = np.array(ct.fit_transform(X))
+
+# --- Step 5: Encode target variable (if categorical) ---
+le = LabelEncoder()
+try:
+    y = le.fit_transform(y)
+except:
+    pass  # Skip if y is already numeric
+
+# --- Step 6: Split dataset ---
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
+
+# --- Step 7: Feature Scaling ---
+sc = StandardScaler()
+X_train[:, -2:] = sc.fit_transform(X_train[:, -2:])
+X_test[:, -2:] = sc.transform(X_test[:, -2:])
+
+# --- Step 8: Print processed data ---
+print("--- Processed Training Features (X_train) ---")
+print(X_train)
+print("\n--- Processed Test Features (X_test) ---")
+print(X_test)
