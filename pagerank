@@ -1,0 +1,78 @@
+# --- Step 1: Import necessary libraries ---
+import numpy as np
+
+def pagerank(link_matrix, d=0.85, max_iterations=100, tolerance=1.0e-6):
+    """
+    Calculates the PageRank for a given link matrix.
+
+    Args:
+    link_matrix (np.array): A square matrix where M[i, j] = 1 if node j links to node i.
+    d (float): The damping factor (usually 0.85).
+    max_iterations (int): Maximum number of iterations to prevent infinite loops.
+    tolerance (float): The convergence tolerance to stop early.
+
+    Returns:
+    np.array: A vector containing the PageRank score for each page.
+    """
+    num_pages = link_matrix.shape[0]
+    if num_pages == 0:
+        return np.array([])
+
+    # Create the probability transition matrix (M)
+    # This is done by normalizing columns by their sum (out-degree)
+    out_degree = np.sum(link_matrix, axis=0)
+    
+    # Handle dangling nodes (pages with no outgoing links)
+    # We pretend they link to all pages equally to conserve rank
+    for j in range(num_pages):
+        if out_degree[j] == 0:
+            link_matrix[:, j] = 1
+            out_degree[j] = num_pages
+            
+    M = link_matrix / out_degree
+    
+    # Initialize the PageRank vector (r)
+    r = np.full(num_pages, 1.0 / num_pages)
+    
+    # --- Step 2: Iteratively calculate PageRank ---
+    for i in range(max_iterations):
+        old_r = r.copy()
+        
+        # The core PageRank formula
+        r = ((1 - d) / num_pages) + d * M @ old_r
+        
+        # Check for convergence
+        if np.linalg.norm(r - old_r, 1) < tolerance:
+            print(f"Converged after {i+1} iterations.")
+            return r
+            
+    print("Reached max iterations without converging.")
+    return r
+
+# --- Step 3: Define an example web graph and run the algorithm ---
+# Example: 4 pages (A, B, C, D)
+# A -> B, C
+# B -> C
+# C -> A
+# D -> C
+# The link_matrix[i, j] is 1 if page j links to page i
+#       From: A B C D
+# To A [[0, 0, 1, 0],
+# To B  [1, 0, 0, 0],
+# To C  [1, 1, 0, 1],
+# To D  [0, 0, 0, 0]]
+link_matrix = np.array([
+    [0, 0, 1, 0],
+    [1, 0, 0, 0],
+    [1, 1, 0, 1],
+    [0, 0, 0, 0]
+])
+
+# Calculate PageRank
+page_ranks = pagerank(link_matrix)
+
+# --- Step 4: Display the results ---
+print("\n--- Final PageRank Scores ---")
+for i, rank in enumerate(page_ranks):
+    # chr(65+i) converts 0 to 'A', 1 to 'B', etc.
+    print(f"Page {chr(65+i)}: {rank:.4f}")
